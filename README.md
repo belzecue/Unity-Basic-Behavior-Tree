@@ -15,7 +15,7 @@ public class MyClass : Monobehaviour
       //New repeating segement, by default will run forever
       new RepeaterNode(
         //Starts new sequence, the first time it receives a failure from it's child, it will stop
-        new Sequence(
+        new SequenceNode(
           new RunNode(CheckIfPathNull),
           new RunNode(CreateNewPath)
         )
