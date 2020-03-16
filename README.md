@@ -12,7 +12,7 @@ public class MyClass : Monobehaviour
   {
     //New tree
     tree = new BehaviorTree( 
-      //New repeating segement, by default will run forever
+      //New repeating segment, by default will run forever
       new RepeaterNode(
         //Starts new sequence, the first time it receives a failure from it's child, it will stop
         new SequenceNode(
