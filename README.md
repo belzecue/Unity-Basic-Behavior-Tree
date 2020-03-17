@@ -123,4 +123,4 @@ namespace Fergicide
 	}
 }
 ```
-This will simply keep running (via the RepeaterNode), then in sequence run a set of actions until it receives a failed result. If CheckIfPathNull returns failed, it wont move onto CreateNewPath. 
+This will simply keep running (via the RepeaterNode), then in sequence run a set of actions until it receives a failed result. 
