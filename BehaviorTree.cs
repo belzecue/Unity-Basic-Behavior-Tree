@@ -1,268 +1,273 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 
-public enum NodeResult { Failed, Running, Succeeded }
-
-public class BehaviorTree
+namespace Fergicide
 {
-    BehaviorNode tree;
-    public bool Running { get; private set; }
+	public enum NodeResult { Failed, Running, Succeeded }
 
-    public BehaviorTree(BehaviorNode startingNode)
-    {
-        if (startingNode == null)
-        {
-            Running = false;
-        }
-        else
-        {
-            tree = startingNode;
-            Run();
-        }
-    }
+	public class BehaviorTree
+	{
+		BehaviorNode tree;
+		public bool Running { get; private set; }
 
-    public void Run()
-    {
-        Running = true;
-    }
+		public BehaviorTree(BehaviorNode startingNode)
+		{
+			if (startingNode == null)
+			{
+				Running = false;
+			}
+			else
+			{
+				tree = startingNode;
+				Run();
+			}
+		}
 
-    /// <summary>
-    /// Should be called in a MonoBehaviour's Update()
-    /// </summary>
-    public void Tick()
-    {
-        if (Running)
-        {
-            NodeResult result = tree.ConductAction();
-            if (result == NodeResult.Running)
-            {
-                return;
-            }
+		public void Run()
+		{
+			Running = true;
+		}
 
-            Running = result == NodeResult.Succeeded;
-        }
-    }
-}
+		/// <summary>
+		/// Should be called in a MonoBehaviour's Update()
+		/// </summary>
+		public void Tick()
+		{
+			if (Running)
+			{
+				NodeResult result = tree.ConductAction();
+				if (result == NodeResult.Running)
+				{
+					return;
+				}
 
-public abstract class BehaviorNode
-{
-    public List<BehaviorNode> children = new List<BehaviorNode>();
+				Running = result == NodeResult.Succeeded;
+			}
+		}
+	}
 
-    public abstract NodeResult ConductAction();
+	public abstract class BehaviorNode
+	{
+		public List<BehaviorNode> children = new List<BehaviorNode>();
 
-    public BehaviorNode(BehaviorNode[] nodes)
-    {
-        for (int i = 0; i < nodes.Length; i++)
-        {
-            children.Add(nodes[i]);
-        }
-    }
-}
+		public abstract NodeResult ConductAction();
 
-public class RepeaterNode : BehaviorNode
-{
-    public bool RunForever = true;
-    public int StepsToRun = 1;
-    public bool StopOnFailure = false;
+		public BehaviorNode(BehaviorNode[] nodes)
+		{
+			for (int i = 0; i < nodes.Length; i++)
+			{
+				children.Add(nodes[i]);
+			}
+		}
+	}
 
-    private int timesRun = 0;
+	public class RepeaterNode : BehaviorNode
+	{
+		public bool RunForever = true;
+		public int StepsToRun = 1;
+		public bool StopOnFailure = false;
 
-    public RepeaterNode(params BehaviorNode[] nodes) : base(nodes)
-    {
-    }
+		private int timesRun = 0;
 
-    public override NodeResult ConductAction()
-    {
-        for (int i = 0; i < children.Count; i++)
-        {
-            switch (children[i].ConductAction())
-            {
-                case NodeResult.Running:
-                    return NodeResult.Running;
-                case NodeResult.Failed:
-                    if (StopOnFailure)
-                    {
-                        return NodeResult.Failed;
-                    }
-                    break;
-            }
-        }
+		public RepeaterNode(params BehaviorNode[] nodes) : base(nodes)
+		{
+		}
 
-        if (!RunForever)
-        {
-            timesRun++;
-            if (timesRun >= StepsToRun)
-            {
-                return NodeResult.Failed;
-            }
-        }
+		public override NodeResult ConductAction()
+		{
+			for (int i = 0; i < children.Count; i++)
+			{
+				switch (children[i].ConductAction())
+				{
+					case NodeResult.Running:
+						return NodeResult.Running;
+					case NodeResult.Failed:
+						if (StopOnFailure)
+						{
+							return NodeResult.Failed;
+						}
+						break;
+				}
+			}
 
-        return NodeResult.Succeeded;
-    }
-}
+			if (!RunForever)
+			{
+				timesRun++;
+				if (timesRun >= StepsToRun)
+				{
+					return NodeResult.Failed;
+				}
+			}
 
-/// <summary>
-/// AND Functionality
-/// </summary>
-public class SequenceNode : BehaviorNode
-{
-    public SequenceNode(params BehaviorNode[] nodes) : base(nodes)
-    {
-    }
+			return NodeResult.Succeeded;
+		}
+	}
 
-    public override NodeResult ConductAction()
-    {
-        for (int i = 0; i < children.Count; i++)
-        {
-            switch (children[i].ConductAction())
-            {
-                case NodeResult.Running:
-                    return NodeResult.Running;
-                case NodeResult.Failed:
-                    return NodeResult.Failed;
-            }
-        }
-        return NodeResult.Succeeded;
-    }
-}
+	/// <summary>
+	/// AND Functionality
+	/// </summary>
+	public class AndNode : BehaviorNode
+	{
+		public AndNode(params BehaviorNode[] nodes) : base(nodes)
+		{
+		}
 
-/// <summary>
-/// OR Functionality
-/// </summary>
-public class AnyNode : BehaviorNode
-{
-    public AnyNode(params BehaviorNode[] nodes) : base(nodes)
-    {
-    }
+		public override NodeResult ConductAction()
+		{
+			for (int i = 0; i < children.Count; i++)
+			{
+				switch (children[i].ConductAction())
+				{
+					case NodeResult.Running:
+						return NodeResult.Running;
+					case NodeResult.Failed:
+						return NodeResult.Failed;
+				}
+			}
+			return NodeResult.Succeeded;
+		}
+	}
 
-    public override NodeResult ConductAction()
-    {
-        for (int i = 0; i < children.Count; i++)
-        {
-            switch (children[i].ConductAction())
-            {
-                case NodeResult.Running:
-                    return NodeResult.Running;
-                case NodeResult.Succeeded:
-                    return NodeResult.Succeeded;
-            }
-        }
-        return NodeResult.Failed;
-    }
-}
+	/// <summary>
+	/// OR Functionality
+	/// </summary>
+	public class OrNode : BehaviorNode
+	{
+		public OrNode(params BehaviorNode[] nodes) : base(nodes)
+		{
+		}
 
-public abstract class DelayNode : BehaviorNode
-{
-    protected NodeResult finalResult = NodeResult.Running;
-    public bool IsRunning { get; protected set; } = false;
+		public override NodeResult ConductAction()
+		{
+			for (int i = 0; i < children.Count; i++)
+			{
+				switch (children[i].ConductAction())
+				{
+					case NodeResult.Running:
+						return NodeResult.Running;
+					case NodeResult.Succeeded:
+						return NodeResult.Succeeded;
+				}
+			}
+			return NodeResult.Failed;
+		}
+	}
 
-    public DelayNode(BehaviorNode[] nodes) : base(nodes)
-    {
-    }
-}
-public class RunNode : DelayNode
-{
-    public Action<Action<NodeResult>> behavior;
-    bool finishedRunning = false;
+	public abstract class DelayNode : BehaviorNode
+	{
+		protected NodeResult finalResult = NodeResult.Running;
+		public bool IsRunning { get; protected set; } = false;
 
-    public RunNode(Action<Action<NodeResult>> action, params BehaviorNode[] nodes) : base(nodes)
-    {
-        behavior = action;
-    }
+		public DelayNode(BehaviorNode[] nodes) : base(nodes)
+		{
+		}
+	}
 
-    public override NodeResult ConductAction()
-    {
-        if (IsRunning)
-        {
-            if (finishedRunning)
-            {
-                IsRunning = false;
-                finishedRunning = false;
-                return finalResult;
-            }
-            return NodeResult.Running;
-        }
-        else
-        {
-            IsRunning = true;
-            finishedRunning = false;
-            behavior(DoneRunning);
-            if (finishedRunning)
-            {
-                return finalResult;
-            }
-            return NodeResult.Running;
-        }
-    }
+	public class RunNode : DelayNode
+	{
+		public Action behavior;
+		public Action<NodeResult> onCompleteAction;
+		bool finishedRunning = false;
 
-    private void DoneRunning(NodeResult result)
-    {
-        finishedRunning = true;
-        finalResult = result;
-    }
-}
+		public RunNode(Action action, out Action<NodeResult> onCompleteAction, params BehaviorNode[] nodes) : base(nodes)
+		{
+			behavior = action;
+			onCompleteAction = DoneRunning;
+		}
 
-public class WaitNode : DelayNode
-{
-    float timer = 0;
-    float runTime = 0;
+		public override NodeResult ConductAction()
+		{
+			if (IsRunning)
+			{
+				if (finishedRunning)
+				{
+					IsRunning = false;
+					finishedRunning = false;
+					return finalResult;
+				}
+				return NodeResult.Running;
+			}
+			else
+			{
+				IsRunning = true;
+				finishedRunning = false;
+				behavior();
+				if (finishedRunning)
+				{
+					return finalResult;
+				}
+				return NodeResult.Running;
+			}
+		}
 
-    public WaitNode(float timeToRun, params BehaviorNode[] nodes) : base(nodes)
-    {
-        runTime = timeToRun;
-    }
+		private void DoneRunning(NodeResult result)
+		{
+			finishedRunning = true;
+			finalResult = result;
+		}
+	}
 
-    public override NodeResult ConductAction()
-    {
-        if (IsRunning)
-        {
-            timer -= Time.deltaTime;
-            if (timer <= 0)
-            {
-                IsRunning = false;
-                return NodeResult.Succeeded;
-            }
-            return NodeResult.Running;
-        }
-        else
-        {
-            IsRunning = true;
-            timer = runTime;
-            return NodeResult.Running;
-        }
-    }
-}
+	public class WaitNode : DelayNode
+	{
+		float timer = 0;
+		float runTime = 0;
 
-public class WaitDynamicNode : DelayNode
-{
-    protected Func<float> runTime = null;
-    float timer = 0;
+		public WaitNode(float timeToRun, params BehaviorNode[] nodes) : base(nodes)
+		{
+			runTime = timeToRun;
+		}
 
-    public WaitDynamicNode(Func<float> timeToRun, params BehaviorNode[] nodes) : base(nodes)
-    {
-        runTime = timeToRun;
-    }
+		public override NodeResult ConductAction()
+		{
+			if (IsRunning)
+			{
+				timer -= Time.deltaTime;
+				if (timer <= 0)
+				{
+					IsRunning = false;
+					return NodeResult.Succeeded;
+				}
+				return NodeResult.Running;
+			}
+			else
+			{
+				IsRunning = true;
+				timer = runTime;
+				return NodeResult.Running;
+			}
+		}
+	}
 
-    public override NodeResult ConductAction()
-    {
-        if (IsRunning)
-        {
-            timer -= Time.deltaTime;
-            if (timer <= 0)
-            {
-                IsRunning = false;
-                return NodeResult.Succeeded;
-            }
-            return NodeResult.Running;
-        }
-        else
-        {
-            IsRunning = true;
-            timer = runTime();
-            return NodeResult.Running;
-        }
-    }
+	public class WaitDynamicNode : DelayNode
+	{
+		protected Func<float> runTime = null;
+		float timer = 0;
+
+		public WaitDynamicNode(Func<float> timeToRun, params BehaviorNode[] nodes) : base(nodes)
+		{
+			runTime = timeToRun;
+		}
+
+		public override NodeResult ConductAction()
+		{
+			if (IsRunning)
+			{
+				timer -= Time.deltaTime;
+				if (timer <= 0)
+				{
+					IsRunning = false;
+					return NodeResult.Succeeded;
+				}
+				return NodeResult.Running;
+			}
+			else
+			{
+				IsRunning = true;
+				timer = runTime();
+				return NodeResult.Running;
+			}
+		}
+	}
 }
