@@ -2,7 +2,7 @@
 Just a basic code-based behavior tree for Unity
 
 Very simple to use. An example:
-(NOTE from Belzecue: I replaced the original example with a new one, because of how the code has been refactored to eliminate garbage generation.  Note also that I run the tick in Update, even though I'm moving rigidbody's, because I like to run manual Physics at 1/60 to match screen refresh. See here: https://docs.unity3d.com/ScriptReference/Physics.Simulate.html)
+(NOTE from Belzecue: I replaced the original example with a new one, because of how the code has been refactored to eliminate garbage generation.  Note also that I run the tick in Update, even though I'm moving rigidbodys, because I like to run manual Physics at 1/60 to match screen refresh. See here: https://docs.unity3d.com/ScriptReference/Physics.Simulate.html)
 ```cs
 using UnityEngine;
 using System;
